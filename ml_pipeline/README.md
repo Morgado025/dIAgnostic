@@ -30,14 +30,6 @@ O notebook `pneumonia.ipynb` abrange:
 7. Salvamento do modelo `.h5`  
 8. Testes de inferência  
 
-### Arquitetura
-
-- CNN com 5 blocos convolucionais  
-- Dropout (0.1–0.2) para regularização  
-- Ativação final: sigmoid  
-- Otimizador: RMSprop  
-- Perda: Binary Crossentropy  
-
 ### Resultados e Uso
 
 - Avaliação por acurácia, matriz de confusão, F1-score  

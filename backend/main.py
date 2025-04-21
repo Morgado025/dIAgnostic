@@ -63,20 +63,21 @@ def preprocess_image(image_bytes):
     try:
         # Convert bytes to numpy array
         nparr = np.frombuffer(image_bytes, np.uint8)
-        # Decode the image
-        img = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
+        
+        # Decode image as color (3 channels)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         if img is None:
             raise ValueError("Could not decode image")
-            
-        # Resize to match the model's expected input
-        img = cv2.resize(img, (150, 150))
-            
+
+        # Resize to 256x256
+        img = cv2.resize(img, (256, 256))
+
         # Normalize pixel values
         img = img / 255.0
-            
-        # Reshape for the model (add batch and channel dimensions)
-        img = np.reshape(img, (-1, 150, 150, 1))
-            
+
+        # Reshape for the model (batch size of 1)
+        img = np.reshape(img, (1, 256, 256, 3))
+
         return img
     except Exception as e:
         raise ValueError(f"Error preprocessing image: {e}")
