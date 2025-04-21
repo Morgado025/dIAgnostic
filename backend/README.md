@@ -1,46 +1,66 @@
-# API de Detecção de Pneumonia
+# dIAgnostic API
 
-Uma API REST baseada em FastAPI para detectar pneumonia em imagens de raio-X do tórax usando um modelo de aprendizado profundo.
+Uma API REST construída com FastAPI para diagnóstico médico, incluindo **detecção de pneumonia** a partir de imagens de raio-X e **predição de diabetes** a partir de dados clínicos. 
 
-## Visão Geral
+## 🧠 Visão Geral
 
-Esta API fornece um endpoint para enviar imagens de raio-X do tórax e receber predições sobre se a imagem mostra sinais de pneumonia ou pulmões normais. A API utiliza um modelo de rede neural convolucional treinado para fazer estas predições.
+Esta API permite:
 
-## Funcionalidades
+- Enviar uma imagem de raio-X do tórax e obter um diagnóstico de **pneumonia** ou **normal**.
+- Enviar dados clínicos para obter um diagnóstico de **diabetes positivo** ou **negativo**.
 
-- Envio de imagens de raio-X do tórax para detecção de pneumonia
-- Obtenção de resultados de predição com níveis de confiança
-- Construída com FastAPI para alto desempenho e recursos modernos de API
-- Endpoint de verificação de saúde para verificar o status da API e do modelo
+## 🚀 Funcionalidades
 
-## Requisitos
+- 📷 Detecção de Pneumonia via imagem de raio-X
+- 💉 Predição de Diabetes via dados clínicos
+- ✅ Verificação de saúde da API e dos modelos carregados
+- 🌐 Documentação interativa automática com Swagger e ReDoc
+
+## 🧰 Tecnologias e Requisitos
 
 - Python 3.8+
-- FastAPI
+- [FastAPI](https://fastapi.tiangolo.com/)
 - Uvicorn
 - TensorFlow
 - OpenCV
 - NumPy
+- Scikit-learn (para modelo de diabetes)
 
-## Instalação
+## 📦 Instalação
 
 1. Clone este repositório:
+
 ```bash
 git clone https://github.com/mariafernandarsantos/dIAgnostic.git
-cd dIAgnostic
-cd backend
+cd dIAgnostic/backend
 ```
 
-2. Instale as dependências:
+2. (Opcional) Crie e ative um ambiente virtual:
+```bash
+python -m venv venv
+
+# Linux/Mac
+source venv/bin/activate
+
+# Windows
+venv\Scripts\activate
+```
+
+3. Instale as dependências do projeto
 ```bash
 pip install -r requirements.txt
-# ou
-pip install fastapi uvicorn python-multipart tensorflow opencv-python numpy
 ```
 
-3. Baixe o arquivo do modelo:
-   - Certifique-se de que o arquivo `pneumonia_detection_model.h5` esteja no diretório raiz do projeto
-   - Se você precisar treinar seu próprio modelo, consulte o notebook de treinamento no repositório
+4. Certifique-se de ter os arquivos de modelo:
+
+`pneumonia_detection_model.h5`
+
+`diabetes_model.sav`
+
+`diabetes_scaler.sav`
+
+Esses arquivos devem estar no diretório raiz do backend. Se desejar treinar os modelos, consulte os notebooks de treinamento disponíveis no repositório.
+
 
 ## Uso
 
@@ -58,16 +78,17 @@ A API estará disponível em `http://localhost:8000`
 
 ### Endpoints da API
 
-- `GET /`: Mensagem de boas-vindas e informações sobre endpoints disponíveis
-- `GET /health`: Verificar se a API está em execução e se o modelo está carregado
-- `POST /predict`: Enviar uma imagem e obter a predição de pneumonia
+`GET | /`: Mensagem de boas-vindas e descrição da API
+`GET | /health`: Verifica se a API e os modelos estão ativos
+`POST | /predict/pneumonia`: Envia uma imagem para diagnóstico
+`POST | /predict/diabetes`: Envia dados clínicos para diagnóstico
 
-### Fazendo Predições
+### Predição de Pneumonia
 
 Você pode usar cURL para testar a API:
 
 ```bash
-curl -X POST -F "file=@caminho/para/sua/imagem.jpg" http://localhost:8000/predict
+curl -X POST -F "file=@caminho/para/sua/imagem.jpg" http://localhost:8000/predict/pneumonia
 ```
 
 Ou usar qualquer cliente HTTP como Postman, ou o seguinte código Python:
@@ -75,14 +96,13 @@ Ou usar qualquer cliente HTTP como Postman, ou o seguinte código Python:
 ```python
 import requests
 
-url = "http://localhost:8000/predict"
-caminho_imagem = "caminho/para/sua/imagem.jpg"
+url = "http://localhost:8000/predict/pneumonia"
+imagem = "caminho/para/sua/imagem.jpg"
 
-with open(caminho_imagem, "rb") as arquivo_imagem:
-    arquivos = {"file": arquivo_imagem}
-    resposta = requests.post(url, files=arquivos)
+with open(imagem, "rb") as f:
+    response = requests.post(url, files={"file": f})
 
-print(resposta.json())
+print(response.json())
 ```
 
 ### Formato da Resposta
@@ -102,6 +122,57 @@ A API retorna uma resposta JSON com a seguinte estrutura:
 - `diagnosis`: "PNEUMONIA" ou "NORMAL"
 - `confidence`: O nível de confiança (0-1) para a predição
 - `raw_prediction`: A saída bruta do modelo
+
+### Predição de Diabetes
+
+Corpo da requisição (JSON):
+```json
+{
+  "pregnancies": 2,
+  "glucose": 130,
+  "blood_pressure": 80,
+  "skin_thickness": 25,
+  "insulin": 100,
+  "bmi": 28.5,
+  "diabetes_pedigree": 0.3,
+  "age": 40
+}
+```
+cURL:
+```bash
+curl -X POST http://localhost:8000/predict/diabetes \
+     -H "Content-Type: application/json" \
+     -d @dados.json
+```
+
+Python:
+```python
+import requests
+
+url = "http://localhost:8000/predict/diabetes"
+data = {
+    "pregnancies": 2,
+    "glucose": 130,
+    "blood_pressure": 80,
+    "skin_thickness": 25,
+    "insulin": 100,
+    "bmi": 28.5,
+    "diabetes_pedigree": 0.3,
+    "age": 40
+}
+response = requests.post(url, json=data)
+print(response.json())
+```
+
+Resposta esperada:
+```json
+{
+  "diagnosis": "NEGATIVE",
+  "probability": 0.1562,
+  "message": "No diabetes detected"
+}
+```
+
 
 ## Documentação da API
 
