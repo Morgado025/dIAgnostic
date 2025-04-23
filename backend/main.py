@@ -1,28 +1,20 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from contextlib import asynccontextmanager
+
 import numpy as np
 import cv2
-from tensorflow.keras.models import load_model
 import uvicorn
 import pickle
-from pydantic import BaseModel
 
-app = FastAPI(
-    title="dIAgnostic API",
-    description="API for medical diagnostics including pneumonia detection and diabetes prediction",
-    version="1.0.0"
-)
+from tensorflow.keras.models import load_model
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+from database import database, engine, metadata
+from auth import router as auth_router
 
-# Models
+# Variáveis globais dos modelos
 pneumonia_model = None
 diabetes_model = None
 diabetes_scaler = None
@@ -37,11 +29,14 @@ class DiabetesInput(BaseModel):
     diabetes_pedigree: float
     age: int
 
-@app.on_event("startup")
-async def load_ml_models():
-    """Load all ML models on startup."""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     global pneumonia_model, diabetes_model, diabetes_scaler
-    
+
+    # Startup
+    metadata.create_all(bind=engine)
+    await database.connect()
+
     try:
         # Load pneumonia model
         pneumonia_model = load_model('./pneumonia_detection_model.h5')
@@ -58,6 +53,32 @@ async def load_ml_models():
     except Exception as e:
         print(f"Error loading models: {e}")
 
+    yield  # App executa aqui
+
+    # Shutdown
+    await database.disconnect()
+
+# Inicialização do app
+app = FastAPI(
+    title="dIAgnostic API",
+    description="API for medical diagnostics including pneumonia detection and diabetes prediction",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Rotas de autenticação
+app.include_router(auth_router)
+
+# Preprocessamento da imagem
 def preprocess_image(image_bytes):
     """Preprocess the image from bytes for prediction."""
     try:
